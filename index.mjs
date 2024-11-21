@@ -41,8 +41,10 @@ function updateState() {
 
   const LEFT_THRESHOLD = 0x141F00;
   const TOP_THRESHOLD = 0x0A1D00;
-  const RIGHT_THRESHOLD = 0x14E000;
-  const BOTTOM_THRESHOLD = 0x0AA200;
+  const RIGHT_RESET = 0x14E000;
+  const RIGHT_THRESHOLD = 0x14E100;
+  const BOTTOM_RESET = 0x0AA200;
+  const BOTTOM_THRESHOLD = 0x0A9F00;
 
   // Update Dillo's position
   Dillo.X_POS += Dillo.X_SPEED;
@@ -66,16 +68,18 @@ function updateState() {
     collision = true;
     Dillo.Y_POS = TOP_THRESHOLD | (Dillo.Y_POS & 0xFF);
     Dillo.Y_SPEED = SPEED;
-  } else if (Dillo.X_POS > RIGHT_THRESHOLD) {
+  } else if (Dillo.X_POS >= RIGHT_THRESHOLD) {
     collision = true;
-    Dillo.X_POS = RIGHT_THRESHOLD | (Dillo.X_POS & 0xFF);
+    Dillo.X_POS = RIGHT_RESET | (Dillo.X_POS & 0xFF);
     Dillo.X_SPEED = -SPEED;
-  } else if (Dillo.Y_POS > BOTTOM_THRESHOLD) {
+  } else if (Dillo.Y_POS >= BOTTOM_THRESHOLD) {
     collision = true;
     endCheck = true;
-    Dillo.Y_POS = BOTTOM_THRESHOLD | (Dillo.Y_POS & 0xFF);
+    Dillo.Y_POS = BOTTOM_RESET | (Dillo.Y_POS & 0xFF);
     Dillo.Y_SPEED = -SPEED;
   }
+
+  let result = false;
 
   // Roll the RNG and check if his rolling is over
   rollRng();
@@ -83,10 +87,11 @@ function updateState() {
     rollRng(9);
     if (endCheck) {
       rollRng();
+      result = (Rng8[RngFields8.LO] & 0x0F) < 6;
     }
   }
 
-  return false;
+  return result;
 }
 
 // Initialize the RNG value.
