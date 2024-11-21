@@ -12,7 +12,12 @@ import {
  * @param {number=} rolls
  */
 function rollRng(rolls = 1) {
-
+  for (let i = 0; i < rolls; i++) {
+    let nextHi = (Rng16[RngFields16.LO] * 3) >> 8;
+    let nextLo = Math.floor(Rng16[RngFields16.LO] * 3 / 256) + Rng16[RngFields16.LO];
+    Rng8[RngFields8.HI] = nextHi;
+    Rng8[RngFields8.LO] = nextLo;
+  }
 }
 
 /**
