@@ -9,20 +9,14 @@ function isLittleEndian() {
 }
 
 /**
- * 32-bit view of Dillo's current state.
- * @type {Uint32Array}
- */
-export const Dillo = new Uint32Array(4);
-
-/**
- * 32-bit fields for Dillo's current state.
+ * Dillo's current state in subpixels.
  * @type {Object<number>}
  */
-export const Fields = {
-  X_POS: 0,
-  Y_POS: 1,
-  X_SPEED: 2,
-  Y_SPEED: 3
+export const Dillo = {
+  X_POS: 0x14AC00,
+  Y_POS: 0x0A9D00,
+  X_SPEED: -0x0600,
+  Y_SPEED: 0
 };
 
 /**

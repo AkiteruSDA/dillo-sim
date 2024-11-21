@@ -1,6 +1,5 @@
 import {
   Dillo,
-  Fields,
   Rng16,
   Rng8,
   RngFields16,
@@ -21,13 +20,15 @@ function rollRng(rolls = 1) {
 }
 
 /**
- * Reset Dillo to his initial position/speed.
+ * Reset Dillo to his initial position/speed with the given subpixels.
+ * @param {number=} xSubpixel
+ * @param {number=} ySubpixel
  */
-function resetDillo() {
-  Dillo[Fields.X_POS] = 0x14AC41;
-  Dillo[Fields.Y_POS] = 0x0A9D5D;
-  Dillo[Fields.X_SPEED] = 0xFA00;
-  Dillo[Fields.Y_SPEED] = 0x0000;
+function resetDillo(xSubpixel = 0, ySubpixel = 0) {
+  Dillo.X_POS = 0x14AC00 | xSubpixel;
+  Dillo.Y_POS = 0x0A9D00 | ySubpixel;
+  Dillo.X_SPEED = -0x0600;
+  Dillo.Y_SPEED = 0;
 }
 
 /**
@@ -36,7 +37,56 @@ function resetDillo() {
  * @returns {boolean}
  */
 function updateState() {
-  
+  const SPEED = 0x043B;
+
+  const LEFT_THRESHOLD = 0x141F00;
+  const TOP_THRESHOLD = 0x0A1D00;
+  const RIGHT_THRESHOLD = 0x14E000;
+  const BOTTOM_THRESHOLD = 0x0AA200;
+
+  // Update Dillo's position
+  Dillo.X_POS += Dillo.X_SPEED;
+  Dillo.Y_POS += Dillo.Y_SPEED;
+
+  // Flags for RNG rolls and checks
+  let collision = false;
+  let endCheck = false;
+
+  // Check collision
+  if (Dillo.X_POS < LEFT_THRESHOLD) {
+    collision = true;
+    Dillo.X_POS = LEFT_THRESHOLD | (Dillo.X_POS & 0xFF);
+    Dillo.X_SPEED = SPEED;
+    if (Dillo.Y_SPEED === 0) {
+      // Initial left wall hit
+      Dillo.Y_SPEED = -SPEED;
+      endCheck = true;
+    }
+  } else if (Dillo.Y_POS < TOP_THRESHOLD) {
+    collision = true;
+    Dillo.Y_POS = TOP_THRESHOLD | (Dillo.Y_POS & 0xFF);
+    Dillo.Y_SPEED = SPEED;
+  } else if (Dillo.X_POS > RIGHT_THRESHOLD) {
+    collision = true;
+    Dillo.X_POS = RIGHT_THRESHOLD | (Dillo.X_POS & 0xFF);
+    Dillo.X_SPEED = -SPEED;
+  } else if (Dillo.Y_POS > BOTTOM_THRESHOLD) {
+    collision = true;
+    endCheck = true;
+    Dillo.Y_POS = BOTTOM_THRESHOLD | (Dillo.Y_POS & 0xFF);
+    Dillo.Y_SPEED = -SPEED;
+  }
+
+  // Roll the RNG and check if his rolling is over
+  rollRng();
+  if (collision) {
+    rollRng(9);
+    if (endCheck) {
+      rollRng();
+    }
+  }
+
+  return false;
 }
 
 // Initialize the RNG value.
@@ -73,9 +123,9 @@ do {
 } while (Rng16[RngFields16.LO] !== INITIAL_RNG)
 
 // Get the RNG value with the longest simulation.
-let longest = Object.keys(Results).reduce((prev, curr) => {
+let longestSim = Object.keys(Results).reduce((prev, curr) => {
   return Results[curr] > Results[prev] ? curr : prev;
 }, INITIAL_RNG);
 
 // Print the longest simulation to the console.
-console.log(`Longest simulation at RNG value ${longest}`);
+console.log(`Longest simulation at RNG value 0x${Number(longestSim).toString(16).padStart(4, "0")}`);
