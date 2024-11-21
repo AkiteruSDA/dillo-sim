@@ -84,11 +84,11 @@ function updateState() {
   // Roll the RNG and check if his rolling is over
   rollRng();
   if (collision) {
-    rollRng(9);
     if (endCheck) {
       rollRng();
       result = (Rng8[RngFields8.LO] & 0x0F) < 6;
     }
+    rollRng(9);
   }
 
   return result;
@@ -133,4 +133,4 @@ let longestSim = Object.keys(Results).reduce((prev, curr) => {
 }, INITIAL_RNG);
 
 // Print the longest simulation to the console.
-console.log(`Longest simulation at RNG value 0x${Number(longestSim).toString(16).padStart(4, "0")}`);
+console.log(`Longest simulation at RNG value 0x${Number(longestSim).toString(16).padStart(4, "0")}: ${Results[longestSim]} frames or ${Results[longestSim] / 60} seconds`);
