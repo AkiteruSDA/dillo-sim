@@ -25,7 +25,7 @@ function rollRng(rolls = 1) {
  * @param {number=} ySubpixel
  */
 function resetDillo(xSubpixel = 0, ySubpixel = 0) {
-  Dillo.X_POS = 0x14AC00 | xSubpixel;
+  Dillo.X_POS = 0x14D000 | xSubpixel;
   Dillo.Y_POS = 0x0A9D00 | ySubpixel;
   Dillo.X_SPEED = -0x0600;
   Dillo.Y_SPEED = 0;
@@ -53,6 +53,7 @@ function updateState() {
   // Flags for RNG rolls and checks
   let collision = false;
   let endCheck = false;
+  let initial = false;
 
   // Check collision
   if (Dillo.X_POS < LEFT_THRESHOLD) {
@@ -62,6 +63,7 @@ function updateState() {
     if (Dillo.Y_SPEED === 0) {
       // Initial left wall hit
       Dillo.Y_SPEED = -SPEED;
+      initial = true;
       endCheck = true;
     }
   } else if (Dillo.Y_POS < TOP_THRESHOLD) {
@@ -84,18 +86,23 @@ function updateState() {
   // Roll the RNG and check if his rolling is over
   rollRng();
   if (collision) {
+    if (initial) {
+      rollRng(9);
+    }
     if (endCheck) {
       rollRng();
       result = (Rng8[RngFields8.LO] & 0x0F) < 6;
     }
-    rollRng(9);
+    if (!initial) {
+      rollRng(9)
+    }
   }
 
   return result;
 }
 
 // Initialize the RNG value.
-Rng16[RngFields16.LO] = 0x3959;
+Rng16[RngFields16.LO] = 0xD5C1;
 
 // The number of state updates for each starting RNG value.
 const Results = {};

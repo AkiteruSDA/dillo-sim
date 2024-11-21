@@ -13,7 +13,7 @@ function isLittleEndian() {
  * @type {Object<number>}
  */
 export const Dillo = {
-  X_POS: 0x14AC00,
+  X_POS: 0x14D000,
   Y_POS: 0x0A9D00,
   X_SPEED: -0x0600,
   Y_SPEED: 0
