@@ -26,7 +26,7 @@ function rollRng(rolls = 1) {
  */
 function resetDillo(xSubpixel = 0, ySubpixel = 0) {
   Dillo.X_POS = 0x14D000 | xSubpixel;
-  Dillo.Y_POS = 0x0A9D00 | ySubpixel;
+  Dillo.Y_POS = (ySubpixel >= 0x86 ? 0x0A9C00 : 0x0A9D00) | ySubpixel;
   Dillo.X_SPEED = -0x0600;
   Dillo.Y_SPEED = 0;
 }
@@ -94,7 +94,7 @@ function updateState() {
       result = (Rng8[RngFields8.LO] & 0x0F) < 6;
     }
     if (!initial) {
-      rollRng(9)
+      rollRng(9);
     }
   }
 
@@ -108,9 +108,10 @@ Rng16[RngFields16.LO] = 0xD5C1;
 const INITIAL_RNG = Rng16[RngFields16.LO];
 
 // The results for the longest roll
-let maxXSubpixel = 0;
-let maxResult = 0;
-let maxResultRng = 0;
+let maxX = 0;
+let maxY = 0;
+let maxCount = 0;
+let maxRng = 0;
 
 // Run simulations until every RNG value has been exhausted.
 do {
@@ -118,25 +119,33 @@ do {
   const INITIAL_RNG_THIS = Rng16[RngFields16.LO];
 
   for (let xSub = 0; xSub <= 0xFF; xSub++) {
-    // The state update count for this simulation.
-    let count = 0;
+    for (let ySub = 0; ySub <= 0xFF; ySub++) {
+      // The state update count for this simulation.
+      let count = 0;
 
-    // Reset Dillo's state.
-    resetDillo(xSub);
+      // Reset Dillo's state.
+      resetDillo(xSub, ySub);
 
-    // Update Dillo's state until he stops rolling.
-    while (!updateState()) {
-      count++;
+      // Dillo's starting position
+      let startX = Dillo.X_POS;
+      let startY = Dillo.Y_POS;
+
+      // Update Dillo's state until he stops rolling.
+      while (!updateState()) {
+        count++;
+      }
+
+      // If a new longest roll occured, update the results
+      if (count > maxCount) {
+        maxX = startX;
+        maxY = startY;
+        maxCount = count;
+        maxRng = INITIAL_RNG_THIS;
+      }
+
+      // Reset the RNG for the next set of subpixels.
+      Rng16[RngFields16.LO] = INITIAL_RNG_THIS;
     }
-
-    if (count >= maxResult) {
-      maxResult = count;
-      maxXSubpixel = xSub;
-      maxResultRng = INITIAL_RNG_THIS;
-    }
-
-    // Reset the RNG for the next subpixel.
-    Rng16[RngFields16.LO] = INITIAL_RNG_THIS;
   }
 
   // Increment the RNG for the next inital RNG value.
@@ -144,6 +153,12 @@ do {
 } while (Rng16[RngFields16.LO] !== INITIAL_RNG)
 
 // Print the longest simulation to the console.
-console.log(`RNG: ${maxResultRng.toString(16)}`);
-console.log(`X Subpixel: ${maxXSubpixel.toString(16)}`);
-console.log(`Time: ${maxResult} frames or ${maxResult / 60.099} seconds`);
+console.log(`Start X Position: 0x${maxX.toString(16).padStart(6, "0")}`);
+console.log(`Start Y Position: 0x${maxY.toString(16).padStart(6, "0")}`);
+console.log(`RNG: 0x${maxRng.toString(16).padStart(4, "0")}`);
+console.log(`Time: ${maxCount} frames or ${maxCount / 60.099} seconds`);
+console.log();
+console.log("To recreate in-game, find the frame where Dillo's state first changes to 8 at 0x0e6b and plug these values in (little endian) on that frame.");
+console.log("RNG Address: 0x0ba6");
+console.log("Dillo X Position Address: 0x0e6c");
+console.log("Dillo Y Position Address: 0x0e6f");
