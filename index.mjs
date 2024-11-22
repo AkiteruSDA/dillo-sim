@@ -104,40 +104,46 @@ function updateState() {
 // Initialize the RNG value.
 Rng16[RngFields16.LO] = 0xD5C1;
 
-// The number of state updates for each starting RNG value.
-const Results = {};
-
 // The initial RNG value for all of the simulations.
 const INITIAL_RNG = Rng16[RngFields16.LO];
 
+// The results for the longest roll
+let maxXSubpixel = 0;
+let maxResult = 0;
+let maxResultRng = 0;
+
 // Run simulations until every RNG value has been exhausted.
 do {
-  // The initial RNG value for this simulation.
+  // The initial RNG value for this set of simulations.
   const INITIAL_RNG_THIS = Rng16[RngFields16.LO];
 
-  // The state update count for this simulation.
-  let count = 0;
+  for (let xSub = 0; xSub <= 0xFF; xSub++) {
+    // The state update count for this simulation.
+    let count = 0;
 
-  // Reset Dillo's state.
-  resetDillo();
+    // Reset Dillo's state.
+    resetDillo(xSub);
 
-  // Update Dillo's state until he stops rolling.
-  while (!updateState()) {
-    count++;
+    // Update Dillo's state until he stops rolling.
+    while (!updateState()) {
+      count++;
+    }
+
+    if (count >= maxResult) {
+      maxResult = count;
+      maxXSubpixel = xSub;
+      maxResultRng = INITIAL_RNG_THIS;
+    }
+
+    // Reset the RNG for the next subpixel.
+    Rng16[RngFields16.LO] = INITIAL_RNG_THIS;
   }
 
-  // Add the result of this simulation to the results.
-  Results[INITIAL_RNG_THIS] = count;
-
-  // Reset and increment the RNG for the next simulation.
-  Rng16[RngFields16.LO] = INITIAL_RNG_THIS;
+  // Increment the RNG for the next inital RNG value.
   rollRng();
 } while (Rng16[RngFields16.LO] !== INITIAL_RNG)
 
-// Get the RNG value with the longest simulation.
-let longestSim = Object.keys(Results).reduce((prev, curr) => {
-  return Results[curr] > Results[prev] ? curr : prev;
-}, INITIAL_RNG);
-
 // Print the longest simulation to the console.
-console.log(`Longest simulation at RNG value 0x${Number(longestSim).toString(16).padStart(4, "0")}: ${Results[longestSim]} frames or ${Results[longestSim] / 60} seconds`);
+console.log(`RNG: ${maxResultRng.toString(16)}`);
+console.log(`X Subpixel: ${maxXSubpixel.toString(16)}`);
+console.log(`Time: ${maxResult} frames or ${maxResult / 60.099} seconds`);
