@@ -148,6 +148,8 @@ do {
     }
   }
 
+  console.log(`Finished RNG value 0x${Rng16[RngFields16.LO].toString(16).padStart(4, "0")} at ${new Date().toISOString()}`);
+
   // Increment the RNG for the next inital RNG value.
   rollRng();
 } while (Rng16[RngFields16.LO] !== INITIAL_RNG)
